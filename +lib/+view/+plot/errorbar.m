@@ -1,0 +1,3 @@
+function h=errorbar(profile,ax,ay,ady,varargin)
+h=errorbar(ax.map(profile),ay.map(profile),ady.map(profile),...
+	'DisplayName', profile.label, varargin{:});
