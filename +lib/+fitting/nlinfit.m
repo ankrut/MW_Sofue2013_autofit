@@ -33,7 +33,7 @@ function varargout = nlinfit(S,varargin)
 		SOL		= fSolution(MODEL);
 		
 		% calc response values
-		response_values = response_list.accumulate(@(elm) elm.response.map(SOL))';
+		response_values = response_list.accumulate(@(elm) elm.map(SOL))';
 		
 		if isfield(S,'debug')
 			S.debug(MODEL,SOL,response_list);

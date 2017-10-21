@@ -5,8 +5,6 @@ classdef array < handle
 	
 	properties(SetAccess = private, Dependent)
 		length
-		vector		% converts to array and reshapes
-		stream		% converts to array (no reshaping)
 	end
 	
 	methods
@@ -35,15 +33,6 @@ classdef array < handle
 			n = numel(obj.data);
 		end
 		
-		function data=get.vector(obj)
-			data = reshape([obj.data{:}],size(obj.data));
-		end
-		
-		function data=get.stream(obj)
-			data = [obj.data{:}];
-		end
-		
-		
 		% intrinsic array manipulation
 		function obj=push(obj,elm)
 			obj.data{end+1} = elm;
@@ -62,9 +51,8 @@ classdef array < handle
             end
         end
 		
-		function obj=sort(obj,f)
-			arr = obj.map(f);
-			[~,sx] = sort(arr.vector);
+		function obj=sort(obj,f,varargin)
+			[~,sx] = sort(obj.accumulate(f),varargin{:});
 			
 			obj.data = obj.data(sx);
 		end

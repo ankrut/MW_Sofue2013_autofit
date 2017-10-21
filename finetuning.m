@@ -16,7 +16,7 @@ for ii=1:TBL.length
 
 	% try normal autofind method
 	fprintf(' === autofind (normal) ===\n');
-	[SOL, vm] = script.autofind(vm,list);
+	[SOL, vm] = script.nlinfit(vm,list);
 	chi2 = list.chi2(SOL);
 	
 	% try mean values of two neighbors
@@ -48,7 +48,7 @@ for ii=1:TBL.length
 	if isnan(chi2) || chi2 > TAU
 		% if result is still not good enough try 2step method
 		try
-			[SOL, vm] = script.autofind_2step(vm,list,list_core,response_halo);
+			[SOL, vm] = script.nlinfit_2step(vm,list,list_core,response_halo);
 			chi2 = list.chi2(SOL);
 		end
 	end
@@ -71,7 +71,7 @@ vm.param.beta0	= mean([vm1.param.beta0,	vm2.param.beta0]);
 vm.param.theta0 = mean([vm1.param.theta0,	vm2.param.theta0]);
 vm.param.W0		= mean([vm1.param.W0,		vm2.param.W0]);
 
-SOL = script.autofind(vm,list);
+SOL = script.nlinfit(vm,list);
 
 
 function [SOL, vm] = calcShake(vm,q,list)
@@ -80,4 +80,4 @@ vm.param.beta0	= vm.param.beta0*lib.rand(1 - q,1 + q);
 % vm.param.theta0 = vm.param.theta0*lib.rand(1 - q,1 + q);
 % vm.param.W0		= vm.param.W0*lib.rand(1 - q,1 + q);
 
-[SOL, vm] = script.autofind(vm,list);
+[SOL, vm] = script.nlinfit(vm,list);

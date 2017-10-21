@@ -1,4 +1,4 @@
-function SOL = W0_beta0(S)
+function [SOL,varargout] = W0_beta0(S)
 
 % set vector wrapper (model => nlinfit vector)
 fVector = @(SOL) [
@@ -17,7 +17,11 @@ fModel = @(b,SOL) struct(...
 	'options',	S.model.options ...
 );
 
-SOL = lib.fitting.nlinfit(lib.struct.merge(struct(...
+% set argument struct
+S = lib.struct.merge(struct(...
 	'fVector',		fVector,...
 	'fModel',		fModel ...
-),S));
+),S);
+
+SOL				= lib.fitting.nlinfit(S);
+varargout{1}	= S.fModel(S.fVector(SOL),SOL);

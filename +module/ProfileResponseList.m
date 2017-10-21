@@ -5,7 +5,7 @@ classdef ProfileResponseList < module.array
 		end
 		
 		function value=chi2(obj,profile)
-			fCHI2 = @(elm) elm.weight.*(elm.response.map(profile) - elm.prediction).^2;
+			fCHI2 = @(elm) elm.chi2(profile);
 			value = sum(obj.accumulate(fCHI2));
 		end
 	end

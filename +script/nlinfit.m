@@ -1,8 +1,6 @@
-function [SOL, vm] = autofind(vm,list,varargin)
+function varargout = nlinfit(vm,list,varargin)
 % set nlinfit options
 opts = statset('nlinfit');
-% opts.Display = 'iter';
-% opts.MaxIter = 15;
 
 % set logging function
 fLog = @(model,SOL,list) fprintf('<strong>%1.15e</strong>\t<strong>%1.15e</strong>\t<strong>%1.15e</strong>\t%1.3e\n',SOL.data.beta0,SOL.data.theta0,SOL.data.W0,list.chi2(SOL));
@@ -10,7 +8,7 @@ fLog = @(model,SOL,list) fprintf('<strong>%1.15e</strong>\t<strong>%1.15e</stron
 % set model wrapper (nlinfit vector => model)
 fModel = @(b,SOL) struct(...
 	'param', struct(...
-		'm',		vm.param.m,...
+		'm',		SOL.data.m,...
 		'beta0',	b(1),...
 		'theta0',	b(2),...
 		'W0',		b(3) ...
@@ -29,10 +27,4 @@ arg = lib.struct.merge(struct(...
 ),struct(varargin{:}));
 
 % find solution for given particle mass
-fprintf('%21s\t%21s\t%21s\t%9s\n','beta0','theta0','W0','chi2')
-SOL = model.tov.rar.autofind.beta0_theta0_W0(arg);
-
-% update model
-vm.param.beta0	= SOL.data.beta0;
-vm.param.theta0 = SOL.data.theta0;
-vm.param.W0		= SOL.data.W0;
+[varargout{1:nargout}] = model.tov.rar.autofind.beta0_theta0_W0(arg);

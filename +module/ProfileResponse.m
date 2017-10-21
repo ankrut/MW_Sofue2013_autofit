@@ -1,16 +1,13 @@
-classdef ProfileResponse < handle
+classdef ProfileResponse < module.ProfileMapping
 	properties
-		response
 		prediction
 		weight
-		
-		% DEPRECATED
-		response_value
 	end
 	
 	methods
 		function obj = ProfileResponse(fmap,prediction,varargin)
-			obj.response	= fmap;
+			obj = obj@module.ProfileMapping(fmap);
+			
 			obj.prediction	= prediction;
 			
 			if nargin == 2
@@ -21,25 +18,7 @@ classdef ProfileResponse < handle
 		end
 		
 		function x=chi2(obj,profile)
-			x = (1 - obj.response.map(profile)/obj.prediction)^2;
-		end
-		
-		
-		% DEPRECATED
-		function obj=map(obj,profile)
-			obj.response_value = obj.response.map(profile);
-		end
-		
-		function b=is_smaller(obj)
-			b = obj.response_value < obj.prediction;
-		end
-		
-		function b=is_greater(obj)
-			b = obj.response_value > obj.prediction;
-		end
-		
-		function b=is_equal(obj,tau)
-			b = abs(1 - obj.response_value/obj.prediction) < tau;
+			x = obj.weight*(obj.map(profile) - obj.prediction)^2;
 		end
 	end
 end

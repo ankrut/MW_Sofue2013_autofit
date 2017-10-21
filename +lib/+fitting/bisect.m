@@ -9,7 +9,7 @@ tau			= S.options.tau;
 SOL			= S.fSolution(S.model);
 
 % init logging
-if isfield(S,'log')
+if isfield(S,'log') && isfield(S.log,'fInit')
 	S.log.fInit(SOL);
 end
 
@@ -18,7 +18,7 @@ vm			= S.fModel(Xint(1),SOL);
 SOL			= S.fSolution(vm);
 dY(1)		= fY(SOL);
 
-if isfield(S,'log')
+if isfield(S,'log') && isfield(S.log,'fIter')
 	S.log.fIter(SOL);
 end
 
@@ -27,7 +27,7 @@ vm			= S.fModel(Xint(2),SOL);
 SOL			= S.fSolution(vm);
 dY(3)		= fY(SOL);
 
-if isfield(S,'log')
+if isfield(S,'log') && isfield(S.log,'fIter')
 	S.log.fIter(SOL);
 end
 
@@ -45,7 +45,7 @@ for ii=1:imax
 	dY(2) = fY(SOL);
 	
 	% iteration logging
-	if isfield(S,'log')
+	if isfield(S,'log') && isfield(S.log,'fIter')
 		S.log.fIter(SOL);
 	end
 
