@@ -1,5 +1,5 @@
 # MW_Sofue2013_autofit
-Milky Way rotation curve data (Sofue 2013) is fitted automatically by the RAR model for given particle mass.
+Milky Way data is fitted automatically by the RAR model for a given particle mass.
 
 The constraints are 
 
@@ -7,7 +7,8 @@ The constraints are
 2. Mh = 1.75E11 Msun
 3. rh = 2.53 kpc
 4. M(12kpc) = 5.0E10 Msun (Sofue 2013)
-5. M(50kpc) = 2.3E11 Msun (Gibbons et al. 2014)
+5. M(40kpc) = 2.0E11 Msun (Gibbons et al. 2014)
+5. M(50kpc) = 2.4E11 Msun
 
 ## load data
 ````matlab
