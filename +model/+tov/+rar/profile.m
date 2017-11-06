@@ -63,7 +63,7 @@ classdef profile < module.tov
 			obj.data.potential		= NU;
 			obj.data.mass			= M;
 			
-			% cache time consuming magnitudes (often needed)
+			% cache time consuming variables (often needed)
 			obj.data.density		= frho(R,NU);
 			obj.data.pressure		= fp(R,NU);
 		end

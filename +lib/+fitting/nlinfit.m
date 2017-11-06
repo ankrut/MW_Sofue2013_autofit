@@ -1,58 +1,50 @@
 % A wrapper for the built-in nlinfit function. It works with structs rather
 % than with a list of arguments.
-% COUPLINGS: lib.array, classes.ProfileMapping
-function varargout = nlinfit(S,varargin)
-	% load default values
-	S = lib.struct.merge(struct(...
-		'opts', statset('nlinfit'),...
-		'dt',	3600 ...
-	),S);
-
-	% destructor
-	fVector		= S.fVector;
-	fModel		= S.fModel;
-	fSolution	= S.fSolution;
-	list		= S.list;
-	opts		= S.opts;
-	dt			= S.dt;		% max execution time in sec
-	tt			= cputime;	% start timing;
-	
-	% init
-	SOL			= fSolution(S.model);
-
-	% wrap response function to wrap nlinfit vector into model (fVector),
-	% pass through response list
-	% and detect execution time limit
-	function response_values = fResponseWrap(b,response_list)
-		if cputime-tt > dt
-			error('Execution time exceeded');
-		end
-
-		% calc solution
-		MODEL	= fModel(b,SOL);
-		SOL		= fSolution(MODEL);
-		
-		% calc response values
-		response_values = response_list.accumulate(@(elm) elm.map(SOL))';
-		
-		if isfield(S,'debug')
-			S.debug(MODEL,SOL,response_list);
-		end
-	end
-
-	predictions = list.accumulate(@(elm) elm.prediction)';
-	weights		= list.accumulate(@(elm) elm.weight)';
-
-	[varargout{1:nargout}] = nlinfit(...
-		list,...
-		predictions,...
-		@fResponseWrap,...
-		fVector(SOL),...
-		opts,...
-		'Weight', weights,...
+% COUPLINGS: module.array, module.struct, module.ProfileReponseList
+function varargout = nlinfit(varargin)
+	% contract arguments with default values if not set
+	S = module.struct(...
+		'options',	statset('nlinfit'),...
 		varargin{:} ...
 	);
 
-	% wrap output (nlinfit vector > model > solution)
-	varargout{1} = fSolution(fModel(varargout{1},SOL));
+	% destructor
+	vm			= S.model;
+	fResponse	= S.fResponse;
+	fUpdate		= S.fUpdate;
+	fModel		= S.fModel;
+	fSolution	= S.fSolution;
+
+	% response function hook
+	function response_values = ResponseWrap(b,~)
+		% update model
+		vm	= fUpdate(b,vm);
+		
+		% calc solution
+		SOL	= fSolution(vm);
+		
+		% update model for next iteration
+		vm = fModel(SOL);
+		
+		% calc response values
+		response_values = fResponse(SOL);
+		
+		if isfield(S,'fLog')
+			S.fLog(SOL);
+		end
+	end
+
+	% search for solution
+	b = nlinfit(...
+		[],...
+		S.predictions,...
+		@ResponseWrap,...
+		S.fVector(vm),...
+		S.options,...
+		'Weight', S.weights ...
+	);
+
+	% set output
+	varargout{1} = SOL;
+	varargout{2} = fModel(SOL);
 end

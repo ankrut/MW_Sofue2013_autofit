@@ -1,52 +1,49 @@
-function SOL = bisect(S)
+function [SOL,vm] = bisect(varargin)
+% contract arguments
+S = module.struct(varargin{:});
+
 % destructure
-fY			= S.fY;
 Xint		= S.Xint;
-imax		= S.options.iteration_number;
+imax		= S.options.MaxIter;
 tau			= S.options.tau;
 
-% init values
-SOL			= S.fSolution(S.model);
-
-% init logging
-if isfield(S,'log') && isfield(S.log,'fInit')
-	S.log.fInit(SOL);
-end
-
 % left bound
-vm			= S.fModel(Xint(1),SOL);
+vm			= S.fUpdate(Xint(1),S.model);
 SOL			= S.fSolution(vm);
-dY(1)		= fY(SOL);
+dY(1)		= S.fResponse(SOL);
 
-if isfield(S,'log') && isfield(S.log,'fIter')
-	S.log.fIter(SOL);
+if isfield(S,'fLog')
+	S.fLog(SOL);
 end
 
 % right bound
-vm			= S.fModel(Xint(2),SOL);
+vm			= S.fUpdate(Xint(2),S.model);
 SOL			= S.fSolution(vm);
-dY(3)		= fY(SOL);
+dY(3)		= S.fResponse(SOL);
 
-if isfield(S,'log') && isfield(S.log,'fIter')
-	S.log.fIter(SOL);
+if isfield(S,'fLog')
+	S.fLog(SOL);
 end
 
 for ii=1:imax
 	% next bisection point
 	X = mean(Xint);
 		
-	% create model struct with given new X and solution SOL
-	vm = S.fModel(X,SOL);
+	% update model struct with given new X
+	vm = S.fUpdate(X,vm);
 
 	% calculate new solution
 	SOL = S.fSolution(vm);
 	
-	% get relative distance
-	dY(2) = fY(SOL);
+	% set model struct for next iteration
+	vm = S.fModel(SOL);
 	
-	% iteration logging
-	if isfield(S,'log') && isfield(S.log,'fIter')
-		S.log.fIter(SOL);
+	% get relative distance
+	dY(2) = S.fResponse(SOL);
+	
+	% iteration print
+	if isfield(S,'fLog')
+		S.fLog(SOL);
 	end
 
 	% get new X (if necessary)

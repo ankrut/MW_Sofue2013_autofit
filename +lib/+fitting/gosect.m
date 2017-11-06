@@ -1,51 +1,77 @@
-function [SOL,vm] = gosect(vm1,vm2,S)
+function [SOL,vm] = gosect(varargin)
+% default options
+opts.tau		= 1E-9;
+opts.rtau		= 1E-4;
+opts.MaxIter	= 50;
+
+% contract arguments with default values (if not set)
+S = module.struct(...
+	'options', opts,...
+	varargin{:} ...
+);
+
 % destructure
-TOL			= S.options.tol;		% tolerance
+TOL			= eps;					% x tolerance
+TAU			= S.options.tau;		% response tolerance
+RTAU		= S.options.rtau;		% relative response tolerance
 imax		= S.options.MaxIter;	% max iterations
 
-fY			= S.fY;
+Xint		= S.Xint;				% search interval
+vm			= S.model;				% initial model struct
+
+fResponse	= S.fResponse;			% solution			-> double
 fSolution	= S.fSolution;			% model				-> solution
 fModel		= S.fModel;				% solution			-> model
-fVector		= S.fVector;			% model				-> vector
 fUpdate		= S.fUpdate;			% (vector,model)	-> model
 
-fLog		= S.fLog;
+fLog		= S.fLog;				% solution -> print
 
 % init
 PHI			= (1 + sqrt(5))/2;		% golden ratio
 bCalcLeft	= 1;
 bCalcRight	= 1;
-ii			= 0;
+Y			= [];
 
 % ASSUMPTION: in a narrow window fY has a parabolic shape
-ab(1) = fVector(vm1);
-ab(2) = fVector(vm2);
+sLeft.model		= fUpdate(Xint(1),vm);
+sRight.model	= fUpdate(Xint(2),vm);
 
-while diff(ab) > eps || ii < imax
-	ii = ii + 1;
+for ii=1:imax
+	% break criteria
+	if diff(Xint) < TOL ...
+		|| (numel(Y) > 1 && abs(1 - Y(end-1)/Y(end)) < RTAU)
+		break
+	end
 
 	% check new interval border
 	if bCalcLeft
+		% set left border
+		sLeft.x			= Xint(2) - diff(Xint)/PHI;
+		
 		% set model for left border
-		vm1		= fUpdate(ab(2) - diff(ab)/PHI,vm1);
+		sLeft.model		= fUpdate(sLeft.x,sLeft.model);
 		
 		% calculate solution
-		% NOTE: the solution SOL1 and vm1 may be not equivalent anymore
-		SOL1	= fSolution(vm1);
+		% NOTE: the solution sRight.solution and sLeft.model may be not equivalent anymore
+		sLeft.solution	= fSolution(sLeft.model);
 		
 		% therefore update model of left border
-		vm1		= fModel(SOL1);
+		sLeft.model		= fModel(sLeft.solution);
 		
 		% calculate function value
-		Y(1)	= fY(SOL1);
+		sLeft.response	= fResponse(sLeft.solution);
+		
+		% cache response
+		Y(end+1) = sLeft.response;
 		
 		% logging
-		fLog(SOL1);
+		fLog(sLeft.solution);
 
 		% check tolerance
-		SOL = SOL1;
-		vm  = vm1;
-		if Y(1) < TOL
+		SOL = sLeft.solution;
+		vm  = sLeft.model;
+		
+		if sLeft.response < TAU
 			break;
 		end
 		
@@ -54,26 +80,33 @@ while diff(ab) > eps || ii < imax
 	end
 	
 	if bCalcRight
+		% set right border
+		sRight.x		= Xint(1) + diff(Xint)/PHI;
+		
 		% set model for right border
-		vm2		= fUpdate(ab(1) + diff(ab)/PHI,vm2);
+		sRight.model	= fUpdate(sRight.x,sRight.model);
 		
 		% calculate solution
-		% NOTE: the solution SOL2 and vm2 may be not equivalent anymore
-		SOL2	= fSolution(vm2);
+		% NOTE: the solution sRight.solution and sRight.model may be not equivalent anymore
+		sRight.solution	= fSolution(sRight.model);
 		
 		% therefore update model of right border
-		vm2		= fModel(SOL2);
+		sRight.model	= fModel(sRight.solution);
 		
 		% calculate function value
-		Y(2)	= fY(SOL2);
+		sRight.response	= fResponse(sRight.solution);
+		
+		% cache response
+		Y(end+1) = sRight.response;
 		
 		% logging
-		fLog(SOL2);
+		fLog(sRight.solution);
 
 		% check tolerance
-		SOL = SOL2;
-		vm  = vm2;
-		if Y(2) < TOL
+		SOL = sRight.solution;
+		vm  = sRight.model;
+		
+		if sRight.response < TAU
 			break;
 		end
 		
@@ -82,21 +115,29 @@ while diff(ab) > eps || ii < imax
 	end
 
 	% shift interval borders
-	if Y(1) > Y(2)
-		ab(1) = fVector(vm1);
+	if isnan(sLeft.response) && isnan(sRight.response)
+		error('badly chosen interval. Interval edges give NaN.')
+	elseif isnan(sLeft.response) || isnan(sRight.response)
+		Xint = S.onNaN(Xint,sLeft,sRight);
+		bCalcRight	= 1;
+		bCalcLeft	= 1;
+	elseif sLeft.response == sRight.response
+		Xint = S.onEqual(Xint,sLeft,sRight);
+		bCalcRight	= 1;
+		bCalcLeft	= 1;
+	elseif sLeft.response > sRight.response
+		Xint(1) = sLeft.x;
 		
 		% right border becomes left border in next iteration
-		Y(1) = Y(2);
-		vm1 = vm2;
+		sLeft = sRight;
 
 		 % calculate only right border in next iteration
 		bCalcRight = 1;
 	else
-		ab(2) = fVector(vm2);
+		Xint(2) = sRight.x;
 		
 		% left border becomes right border in next iteration
-		Y(2) = Y(1);
-		vm2 = vm1;
+		sRight = sLeft;
 
 		% calculate only left border in next iteration
 		bCalcLeft = 1;
